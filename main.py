@@ -37,7 +37,7 @@ async def on_ready():
 
 async def status():
     await client.wait_until_ready()
-    choices = ["World of Warcraft", "NBA2k20", "Sleeping", "Waiting for new commands", "Coding, Scraping"]
+    choices = ["World of Warcraft", "NBA2k20", "Sleeping", "Waiting for new commands", "Coding", "Scraping"]
 
     while not client.is_closed():
         status = random.choice(choices)
