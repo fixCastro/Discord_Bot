@@ -51,7 +51,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if 'entries' in data:
             data = data['entries'][0]
 
-        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        filename = data['url']
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data, ctx=ctx.author)
 
     @classmethod
@@ -76,8 +76,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return ui_embed
 
 class MusicPlayer:
-    __slots__ = ('member', 'bot', 'guild', 'channel', 'queue', 'next', 'current', 'np')
-
     def __init__(self, ctx):
         self.bot = ctx.bot
         self.member = ctx
@@ -100,8 +98,8 @@ class MusicPlayer:
                 async with timeout(300):
                     source = await self.queue.get()
             except asyncio.TimeoutError:
-                await self.guild.voice_client.disconnect()
-                await self.guild.voice_client.cleanup()
+                await self.member.voice_client.disconnect()
+                await self.member.voice_client.cleanup()
 
             if not isinstance(source, YTDLSource):
                 try:
@@ -113,8 +111,15 @@ class MusicPlayer:
 
             self.current = source
 
-            self.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
-            ui = await YTDLSource.embending(self.member.message.created_at, source.thumbnail, source.title, source.alt_title, self.member.message.author.avatar_url, self.member.message.author.name, source.web_url)
+            self.guild.voice_client.play(source, 
+                                        after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            ui = await YTDLSource.embending(self.member.message.created_at, 
+                                            source.thumbnail, 
+                                            source.title, 
+                                            source.alt_title, 
+                                            self.member.message.author.avatar_url, 
+                                            self.member.message.author.name, 
+                                            source.web_url)
             self.np = await self.channel.send(embed=ui)
             await self.next.wait()
             source.cleanup()
@@ -169,7 +174,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='skip', aliases=['n', 'next'])
+    @commands.command(aliases=['n', 'next'])
     async def skip(self, ctx):
         if not ctx.voice_client or not ctx.voice_client.is_connected():
             return await ctx.send('Não estou tocando nada.')

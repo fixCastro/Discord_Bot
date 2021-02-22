@@ -26,7 +26,7 @@ client = commands.Bot(
     description = "PAPAPA"
 )
 
-cogs = ['cogs.music']
+cogs = ['cogs.music', 'cogs.web']
 
 @client.event
 async def on_ready():
