@@ -1,6 +1,5 @@
 import asyncio
 from async_timeout import timeout
-import itertools
 import youtube_dl
 import discord
 from discord.ext import commands
@@ -33,8 +32,8 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, ctx, volume=0.1):
         super().__init__(source, volume)
-        self.data = data
         self.ctx = ctx
+        self.data = data
         self.title = data.get('title')
         self.url = data.get('url')
         self.alt_title = data.get('alt_title')
@@ -99,7 +98,6 @@ class MusicPlayer:
                     source = await self.queue.get()
             except asyncio.TimeoutError:
                 await self.member.voice_client.disconnect()
-                await self.member.voice_client.cleanup()
 
             if not isinstance(source, YTDLSource):
                 try:
@@ -131,7 +129,7 @@ class Music(commands.Cog):
         self.bot = bot
         self.players = {}
     
-    def get_player(self, ctx):
+    def player(self, ctx):
         try:
             player = self.players[ctx.guild.id]
         except KeyError:
@@ -149,8 +147,7 @@ class Music(commands.Cog):
 
     @commands.command(name='play')
     async def play(self, ctx, *, url):
-        await ctx.trigger_typing()
-        player = self.get_player(ctx)
+        player = self.player(ctx)
         source = await YTDLSource.from_url(ctx, url, loop=self.bot.loop, stream=True)
         await player.queue.put(source)
         if ctx.voice_client.is_playing():
@@ -158,21 +155,13 @@ class Music(commands.Cog):
     
     @commands.command(aliases=['q', 'playlist'])
     async def queue(self, ctx):
-        voice = ctx.voice_client
-
-        if not voice or not voice.is_connected():
-            return await ctx.send(f'```ini\n[Não estou tocando nada.]\n```')
-
-        player = self.get_player(ctx)
+        player = self.player(ctx)
         if player.queue.empty():
             return await ctx.send(f'```ini\n[A fila está vazia.]\n```')
 
-        upcoming = list(itertools.islice(player.queue._queue, 0, 10))
-
-        fmt = '\n'.join(f'**`{i["title"]}`**' for i in upcoming)
-        embed = discord.Embed(title=f'Upcoming - Next {len(upcoming)}', description=fmt)
-
-        await ctx.send(embed=embed)
+        a = player.queue.qsize()
+        
+        await ctx.send(f'```ini\n[Temos {a} música(s) na fila.]\n```')
 
     @commands.command(aliases=['n', 'next'])
     async def skip(self, ctx):
@@ -219,7 +208,6 @@ class Music(commands.Cog):
     @commands.command()
     async def stop(self, ctx):
         await ctx.voice_client.disconnect()
-        await ctx.voice_client.cleanup()
 
     @skip.before_invoke
     @play.before_invoke
@@ -232,6 +220,15 @@ class Music(commands.Cog):
                 raise commands.CommandError("Membro não conectado à um canal de voz.")
         elif ctx.voice_client.is_playing():
             pass
+    
+    @resume.before_invoke
+    @pause.before_invoke
+    @queue.before_invoke
+    @play.before_invoke
+    @skip.before_invoke
+    @volume.before_invoke
+    async def typing(self, ctx):
+        await ctx.trigger_typing()
 
 def setup(bot):
     bot.add_cog(Music(bot))

@@ -1,8 +1,9 @@
 import requests
+import wikipedia
 import discord
 from discord.ext import commands
 
-class IsDown(commands.Cog):
+class Web(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
@@ -17,5 +18,16 @@ class IsDown(commands.Cog):
         elif status in range(500, 599):
             await ctx.send(f'```ini\n[O servidor deste site está com problemas, tente mais tarde. Erro {status}.]\n```')
 
+    @commands.command(aliases=['w'])
+    async def wiki(self, ctx, *, search):
+        wikipedia.set_lang('pt')
+        page = wikipedia.page(search)
+        await ctx.send(f'{page.url}')
+
+    @url.before_invoke
+    @wiki.before_invoke
+    async def typing(self, ctx):
+        await ctx.trigger_typing()
+
 def setup(bot):
-    bot.add_cog(IsDown(bot))
+    bot.add_cog(Web(bot))
