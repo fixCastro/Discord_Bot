@@ -12,7 +12,6 @@ class Utilities(commands.Cog):
     async def translate(self, ctx, lang, *, args):
         t = Translator()
         content = t.translate(str(args), dest=lang)
-        #{content.pronunciation}
         if lang == 'ja':
             await ctx.send(f'```ini\n[{content.text} - {content.pronunciation}]\n```')
         else:
