@@ -1,4 +1,5 @@
 import requests
+#pip install wikipedia
 import wikipedia
 import discord
 from discord.ext import commands
