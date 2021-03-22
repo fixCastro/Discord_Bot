@@ -48,7 +48,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
         if 'entries' in data:
-            data = data['entries'][0]
+            try:
+                data = data['entries'][0]
+            except:
+                return
 
         filename = data['url']
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data, ctx=ctx.author)
@@ -77,6 +80,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class MusicPlayer:
     def __init__(self, ctx):
         self.bot = ctx.bot
+        self.cog = ctx.cog
         self.member = ctx
         self.guild = ctx.guild
         self.channel = ctx.channel
@@ -94,10 +98,10 @@ class MusicPlayer:
             self.next.clear()
 
             try:
-                async with timeout(300):
+                async with timeout(60):
                     source = await self.queue.get()
             except asyncio.TimeoutError:
-                await self.member.voice_client.disconnect()
+                return self.done(self.guild)
 
             if not isinstance(source, YTDLSource):
                 try:
@@ -122,6 +126,9 @@ class MusicPlayer:
             await self.next.wait()
             source.cleanup()
             self.current = None
+    
+    def done(self, guild):
+        return self.bot.loop.create_task(self.cog.cleanup(guild))
 
 class Music(commands.Cog):
 
@@ -129,6 +136,17 @@ class Music(commands.Cog):
         self.bot = bot
         self.players = {}
     
+    async def cleanup(self, guild):
+        try:
+            await guild.voice_client.disconnect()
+        except AttributeError:
+            pass
+
+        try:
+            del self.players[guild.id]
+        except KeyError:
+            pass
+
     def player(self, ctx):
         try:
             player = self.players[ctx.guild.id]
@@ -139,14 +157,18 @@ class Music(commands.Cog):
         return player
 
     @commands.command()
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
+    async def join(self, ctx, *, channel: discord.VoiceChannel=None):
         if ctx.voice_client is not None:
             return await ctx.voice_client.move_to(channel)
+        else:
+            channel = ctx.author.voice.channel
 
         await channel.connect()
 
-    @commands.command(name='play')
+    @commands.command()
     async def play(self, ctx, *, url):
+        if not ctx.voice_client:
+            await ctx.invoke(self.join)
         player = self.player(ctx)
         source = await YTDLSource.from_url(ctx, url, loop=self.bot.loop, stream=True)
         await player.queue.put(source)
@@ -183,9 +205,9 @@ class Music(commands.Cog):
 
         if volume > 0 and volume <= 100: 
             ctx.voice_client.source.volume = volume / 100
-            await ctx.send("Volume alterado para {}%".format(volume))
+            await ctx.send(f'```ini\n[Volume alterado para {volume}.]\n```')
         elif volume == 0:
-            await ctx.send(f'O volume atual é {ctx.voice_client.source.volume * 100}%.')
+            await ctx.send(f'```ini\n[O volume atual é {ctx.voice_client.source.volume * 100}%.]\n```')
 
     @commands.command(aliases=['pausa'])
     async def pause(self, ctx):
@@ -208,7 +230,10 @@ class Music(commands.Cog):
     @commands.command()
     async def stop(self, ctx):
         await ctx.voice_client.disconnect()
+        await self.cleanup(ctx.guild)
 
+    # This command is bugging the PLAY command, 17-13-21.
+    """
     @skip.before_invoke
     @play.before_invoke
     async def ensure_voice(self, ctx):
@@ -218,8 +243,7 @@ class Music(commands.Cog):
             else:
                 await ctx.send("Conecte-se a um canal de voz.")
                 raise commands.CommandError("Membro não conectado à um canal de voz.")
-        elif ctx.voice_client.is_playing():
-            pass
+    """
     
     @resume.before_invoke
     @pause.before_invoke

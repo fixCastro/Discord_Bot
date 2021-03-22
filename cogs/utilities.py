@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 #pip install googletrans==4.0.0-rc1
-import googletrans
 from googletrans import Translator
 
 class Utilities(commands.Cog):

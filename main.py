@@ -1,7 +1,6 @@
-import discord, youtube_dl, os, random, time, asyncio
+import discord, youtube_dl, os, random, asyncio
 from discord.ext import commands
 from discord.utils import get
-from datetime import datetime as d
 from discord.voice_client import VoiceClient
 
 folder = os.path.dirname(os.path.abspath(__file__))
