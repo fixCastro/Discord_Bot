@@ -23,7 +23,10 @@ class Web(commands.Cog):
     async def wiki(self, ctx, *, search):
         wikipedia.set_lang('pt')
         page = wikipedia.page(search)
-        await ctx.send(f'{page.url}')
+        try:
+            await ctx.send(f'{page.url}')
+        except:
+            await ctx.send(f'Não obtive sucesso, {ctx.author}, verifique a sua pesquisa.')
 
     @url.before_invoke
     @wiki.before_invoke

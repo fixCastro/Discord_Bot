@@ -166,14 +166,25 @@ class Music(commands.Cog):
         await channel.connect()
 
     @commands.command()
-    async def play(self, ctx, *, url):
+    async def play(self, ctx, *, url=None):
         if not ctx.voice_client:
             await ctx.invoke(self.join)
-        player = self.player(ctx)
-        source = await YTDLSource.from_url(ctx, url, loop=self.bot.loop, stream=True)
-        await player.queue.put(source)
-        if ctx.voice_client.is_playing():
-            await ctx.send(f'```ini\n[{source.title} adicionada à fila.]\n```')
+
+        if url is not None:
+            player = self.player(ctx)
+            source = await YTDLSource.from_url(ctx, url, loop=self.bot.loop, stream=True)
+            await player.queue.put(source)
+        
+        if url is None and ctx.voice_client.is_playing():
+            await ctx.send(f'```ini\n[Tem música tocando...]\n```')
+        if ctx.voice_client and ctx.voice_client.is_paused():
+            ctx.voice_client.resume()
+            await ctx.send(f'```ini\n[Aúdio retomado por {ctx.author}.]\n```')
+        try:
+            if ctx.voice_client.is_playing() and url is not None:
+                await ctx.send(f'```ini\n[{source.title} adicionada à fila.]\n```')
+        except:
+            await ctx.send(f'```ini\n[Erro, tente novamente.]\n```')
     
     @commands.command(aliases=['q', 'playlist'])
     async def queue(self, ctx):
@@ -214,18 +225,18 @@ class Music(commands.Cog):
         voice = get(self.bot.voice_clients, guild=ctx.guild)
         if voice and voice.is_playing():
             voice.pause()
-            await ctx.send(f"Aúdio pausado por {ctx.author}.")
+            await ctx.send(f'```ini\n[Aúdio pausado por {ctx.author}.]\n```')
         else:
-            await ctx.send(f"Não há nada para pausar.")
+            await ctx.send(f'```ini\n[Não há nada para pausar.]\n```')
     
     @commands.command(aliases=['continuar', 'retornar'])
     async def resume(self, ctx):
         voice = get(self.bot.voice_clients, guild=ctx.guild)
         if voice and voice.is_paused():
             voice.resume()
-            await ctx.send(f"Aúdio retomado por {ctx.author}.")
+            await ctx.send(f'```ini\n[Aúdio retomado por {ctx.author}.]\n```')
         else:
-            await ctx.send(f"Não há aúdio pausado.")
+            await ctx.send(f'```ini\n[Não há aúdio pausado.]\n```')
 
     @commands.command()
     async def stop(self, ctx):
