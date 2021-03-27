@@ -12,9 +12,9 @@ def read_pass(x):
         return lines[x].strip()
 
 def prefix(client, message):
-    prefixes = ['!']
-    if not message.guild:
-        prefixes = ['']
+    prefixes = ['!', '']
+    if message.guild:
+        prefixes = ['!']
     return commands.when_mentioned_or(*prefixes)(client, message)
 
 client = commands.Bot(
@@ -29,7 +29,7 @@ cogs = ['cogs.music', 'cogs.web', 'cogs.utilities']
 
 @client.event
 async def on_ready():
-    print('Okaeri ' + str(client.user.name) + '-sama.')
+    print(f'Okaeri {client.user.name}-sama.')
     for cog in cogs:
         client.load_extension(cog)
     return
