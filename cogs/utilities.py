@@ -21,11 +21,16 @@ class Utilities(commands.Cog):
         aliases=['senha', 'pw'], 
         description='Gerador de senha, utilize o comando e a quantidade de caracteres desejada.')
     async def password(self, ctx, length):
+        try:
+            await ctx.  channel.purge(limit=1)
+        except:
+            pass
         channel = await ctx.message.author.create_dm()
         digits = string.ascii_letters + string.digits
         punctuation = string.punctuation
         result = ''
-        for _ in range(int(length)):
+        result += random.choice(string.ascii_uppercase)
+        for _ in range(int(length)- 2):
             result += random.choice(digits)
         result += random.choice(punctuation)
         try:
@@ -36,14 +41,6 @@ class Utilities(commands.Cog):
     @translate.before_invoke
     async def typing(self, ctx):
         await ctx.trigger_typing()
-    
-    @password.before_invoke
-    async def delete(self, ctx):
-        channel = ctx.channel
-        try:
-            await channel.purge(limit=1)
-        except:
-            pass
 
 def setup(bot):
     bot.add_cog(Utilities(bot))
