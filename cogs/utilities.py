@@ -9,7 +9,7 @@ class Utilities(commands.Cog):
         self.bot = bot
     
     @commands.command(aliases=['t', 'traduzir'])
-    async def translate(self, ctx, lang, *, args):
+    async def translate(self, ctx, lang: str, *, args):
         t = Translator()
         content = t.translate(str(args), dest=lang)
         if lang == 'ja':
@@ -20,19 +20,18 @@ class Utilities(commands.Cog):
     @commands.command(
         aliases=['senha', 'pw'], 
         description='Gerador de senha, utilize o comando e a quantidade de caracteres desejada.')
-    async def password(self, ctx, length):
+    async def password(self, ctx, length: int) -> str:
         try:
-            await ctx.  channel.purge(limit=1)
+            await ctx.channel.purge(limit=1)
         except:
             pass
         channel = await ctx.message.author.create_dm()
-        digits = string.ascii_letters + string.digits
-        punctuation = string.punctuation
         result = ''
+        digits = string.ascii_letters + string.digits
         result += random.choice(string.ascii_uppercase)
-        for _ in range(int(length)- 2):
+        for _ in range(int(length) - 2):
             result += random.choice(digits)
-        result += random.choice(punctuation)
+        result += random.choice(string.punctuation)
         try:
             await channel.send(f'```ini\nSenha gerada com sucesso: {result}\n```')
         except:
